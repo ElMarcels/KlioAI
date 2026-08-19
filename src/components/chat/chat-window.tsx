@@ -10,11 +10,22 @@ interface ChatWindowProps {
   conversationId?: string;
 }
 
-export function ChatWindow({ modelId, conversationId }: ChatWindowProps) {
+export function ChatWindow({
+  modelId,
+  conversationId: initialConversationId,
+}: ChatWindowProps) {
+  const [conversationId, setConversationId] = useState<string | undefined>(
+    initialConversationId
+  );
+
   const { messages, input, handleInputChange, handleSubmit, isLoading } =
     useChat({
       api: "/api/chat",
       body: { modelId, conversationId },
+      onResponse: (response) => {
+        const id = response.headers.get("X-Conversation-Id");
+        if (id) setConversationId(id);
+      },
     });
 
   const messagesEndRef = useRef<HTMLDivElement>(null);

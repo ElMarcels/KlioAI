@@ -1,12 +1,32 @@
-"use client";
-
+import { auth } from "@/auth";
+import { db } from "@/lib/db";
 import { PRICING_PLANS } from "@/lib/constants";
-import { useSession } from "next-auth/react";
-import { motion } from "framer-motion";
 import { Check, CreditCard } from "lucide-react";
+import { CheckoutButton } from "@/components/billing/checkout-button";
+import { PortalButton } from "@/components/billing/portal-button";
+import { redirect } from "next/navigation";
 
-export default function BillingPage() {
-  const { data: session } = useSession();
+export default async function BillingPage() {
+  const session = await auth();
+
+  if (!session?.user?.id) {
+    redirect("/login");
+  }
+
+  const user = await db.user.findUnique({
+    where: { id: session.user.id },
+    select: {
+      plan: true,
+      subscriptionStatus: true,
+      subscriptions: {
+        orderBy: { createdAt: "desc" },
+        take: 1,
+      },
+    },
+  });
+
+  const currentPlan = user?.plan || "FREE";
+  const subscription = user?.subscriptions[0];
 
   return (
     <div className="max-w-5xl mx-auto space-y-8">
@@ -17,65 +37,100 @@ export default function BillingPage() {
         </p>
       </div>
 
-      {/* Current Plan */}
-      <motion.div
-        initial={{ opacity: 0, y: 10 }}
-        animate={{ opacity: 1, y: 0 }}
-        className="rounded-xl border border-border bg-card p-6"
-      >
+      <div className="rounded-xl border border-border bg-card p-6">
         <div className="flex items-center justify-between">
           <div>
             <h3 className="text-sm font-medium text-muted-foreground">
               Current Plan
             </h3>
-            <p className="text-2xl font-bold mt-1 capitalize">
-              Klio {(session?.user?.plan || "free").toLowerCase()}
+            <p className="text-2xl font-bold mt-1">
+              KlioAI {currentPlan.toLowerCase()}
             </p>
+            <div className="mt-2 flex items-center gap-3">
+              <span
+                className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium ${
+                  currentPlan === "FREE"
+                    ? "bg-muted text-muted-foreground"
+                    : currentPlan === "PRO"
+                    ? "bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-300"
+                    : "bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-300"
+                }`}
+              >
+                {subscription?.status || "NONE"}
+              </span>
+              {subscription?.stripeCurrentPeriodEnd && (
+                <span className="text-xs text-muted-foreground">
+                  Renews{" "}
+                  {new Date(
+                    subscription.stripeCurrentPeriodEnd
+                  ).toLocaleDateString()}
+                </span>
+              )}
+            </div>
           </div>
           <CreditCard className="h-8 w-8 text-muted-foreground" />
         </div>
-      </motion.div>
+        {subscription && (
+          <div className="mt-4">
+            <PortalButton />
+          </div>
+        )}
+      </div>
 
-      {/* Plans */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        {PRICING_PLANS.map((plan) => (
-          <div
-            key={plan.name}
-            className={`rounded-xl border bg-card p-6 ${
-              plan.popular
-                ? "border-primary shadow-lg shadow-primary/10"
-                : "border-border"
-            }`}
-          >
-            {plan.popular && (
-              <div className="text-xs font-medium text-primary mb-2">
-                Most Popular
-              </div>
-            )}
-            <h3 className="text-xl font-bold">{plan.name}</h3>
-            <div className="mt-2 mb-4">
-              <span className="text-3xl font-bold">${plan.price}</span>
-              <span className="text-muted-foreground">/{plan.interval}</span>
-            </div>
-            <ul className="space-y-2 mb-6">
-              {plan.features.map((feature) => (
-                <li key={feature} className="flex items-center gap-2 text-sm">
-                  <Check className="h-4 w-4 text-primary shrink-0" />
-                  {feature}
-                </li>
-              ))}
-            </ul>
-            <button
-              className={`w-full rounded-lg py-2.5 text-sm font-medium transition-colors ${
+        {PRICING_PLANS.map((plan) => {
+          const isCurrent = currentPlan === plan.type;
+          const priceId =
+            plan.type === "PRO"
+              ? process.env.NEXT_PUBLIC_STRIPE_PRO_PRICE_ID
+              : plan.type === "ENTERPRISE"
+              ? process.env.NEXT_PUBLIC_STRIPE_ENTERPRISE_PRICE_ID
+              : null;
+
+          return (
+            <div
+              key={plan.name}
+              className={`rounded-xl border bg-card p-6 ${
                 plan.popular
-                  ? "bg-primary text-primary-foreground hover:bg-primary/90"
-                  : "border border-border hover:bg-muted"
+                  ? "border-primary shadow-lg shadow-primary/10"
+                  : "border-border"
               }`}
             >
-              {plan.cta}
-            </button>
-          </div>
-        ))}
+              {plan.popular && (
+                <div className="text-xs font-medium text-primary mb-2">
+                  Most Popular
+                </div>
+              )}
+              <h3 className="text-xl font-bold">{plan.name}</h3>
+              <div className="mt-2 mb-4">
+                <span className="text-3xl font-bold">${plan.price}</span>
+                <span className="text-muted-foreground">/{plan.interval}</span>
+              </div>
+              <ul className="space-y-2 mb-6">
+                {plan.features.map((feature) => (
+                  <li
+                    key={feature}
+                    className="flex items-center gap-2 text-sm"
+                  >
+                    <Check className="h-4 w-4 text-primary shrink-0" />
+                    {feature}
+                  </li>
+                ))}
+              </ul>
+              {isCurrent ? (
+                <div className="w-full rounded-lg py-2.5 text-sm font-medium text-center border border-border bg-muted">
+                  Current Plan
+                </div>
+              ) : priceId ? (
+                <CheckoutButton priceId={priceId} popular={plan.popular} />
+              ) : (
+                <button className="w-full rounded-lg py-2.5 text-sm font-medium border border-border hover:bg-muted transition-colors">
+                  {plan.cta}
+                </button>
+              )}
+            </div>
+          );
+        })}
       </div>
     </div>
   );
