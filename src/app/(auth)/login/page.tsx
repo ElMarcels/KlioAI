@@ -3,13 +3,13 @@
 import { Suspense, useState } from "react";
 import { signIn } from "next-auth/react";
 import Link from "next/link";
-import { useRouter, useSearchParams } from "next/navigation";
+import { useSearchParams } from "next/navigation";
 
 function LoginForm() {
-  const router = useRouter();
   const searchParams = useSearchParams();
   const callbackUrl = searchParams.get("callbackUrl") || "/dashboard";
-  const [error, setError] = useState("");
+  const authError = searchParams.get("error");
+  const [error, setError] = useState(authError ? "Invalid email or password" : "");
   const [loading, setLoading] = useState(false);
 
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
@@ -20,18 +20,11 @@ function LoginForm() {
     const formData = new FormData(e.currentTarget);
 
     try {
-      const result = await signIn("credentials", {
+      await signIn("credentials", {
         email: formData.get("email") as string,
         password: formData.get("password") as string,
-        redirect: false,
+        redirectTo: callbackUrl,
       });
-
-      if (result?.error) {
-        setError("Invalid email or password");
-        setLoading(false);
-      } else {
-        window.location.href = callbackUrl;
-      }
     } catch {
       setError("Something went wrong");
       setLoading(false);
