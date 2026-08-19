@@ -1,14 +1,8 @@
 import NextAuth from "next-auth";
 import Credentials from "next-auth/providers/credentials";
 import Discord from "next-auth/providers/discord";
-import { z } from "zod";
 import bcrypt from "bcryptjs";
 import { db } from "@/lib/db";
-
-const loginSchema = z.object({
-  email: z.string().email("Invalid email address"),
-  password: z.string().min(6, "Password must be at least 6 characters"),
-});
 
 export const {
   handlers,
@@ -23,22 +17,15 @@ export const {
     signIn: "/login",
     error: "/login",
   },
-  cookies: {
-    sessionToken: {
-      name: "authjs.session-token",
-      options: {
-        httpOnly: true,
-        sameSite: "lax",
-        path: "/",
-        secure: true,
-      },
-    },
-  },
   providers: [
-    Discord({
-      clientId: process.env.AUTH_DISCORD_ID,
-      clientSecret: process.env.AUTH_DISCORD_SECRET,
-    }),
+    ...(process.env.AUTH_DISCORD_ID && process.env.AUTH_DISCORD_SECRET
+      ? [
+          Discord({
+            clientId: process.env.AUTH_DISCORD_ID,
+            clientSecret: process.env.AUTH_DISCORD_SECRET,
+          }),
+        ]
+      : []),
     Credentials({
       name: "credentials",
       credentials: {
@@ -46,19 +33,18 @@ export const {
         password: { label: "Password", type: "password" },
       },
       async authorize(credentials) {
-        const parsed = loginSchema.safeParse(credentials);
-        if (!parsed.success) return null;
+        const email = credentials?.email as string | undefined;
+        const password = credentials?.password as string | undefined;
+
+        if (!email || !password) return null;
 
         const user = await db.user.findUnique({
-          where: { email: parsed.data.email },
+          where: { email },
         });
 
         if (!user || !user.password) return null;
 
-        const isValid = await bcrypt.compare(
-          parsed.data.password,
-          user.password
-        );
+        const isValid = await bcrypt.compare(password, user.password);
 
         if (!isValid) return null;
 
