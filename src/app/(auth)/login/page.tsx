@@ -28,13 +28,12 @@ function LoginForm() {
 
       if (result?.error) {
         setError("Invalid email or password");
+        setLoading(false);
       } else {
-        router.push(callbackUrl);
-        router.refresh();
+        window.location.href = callbackUrl;
       }
     } catch {
       setError("Something went wrong");
-    } finally {
       setLoading(false);
     }
   }
