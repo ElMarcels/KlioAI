@@ -1,7 +1,6 @@
 import NextAuth from "next-auth";
 import Credentials from "next-auth/providers/credentials";
 import Discord from "next-auth/providers/discord";
-import { PrismaAdapter } from "@auth/prisma-adapter";
 import { z } from "zod";
 import bcrypt from "bcryptjs";
 import { db } from "@/lib/db";
@@ -17,7 +16,6 @@ export const {
   signIn,
   signOut,
 } = NextAuth({
-  adapter: PrismaAdapter(db),
   session: {
     strategy: "jwt",
   },
@@ -80,25 +78,6 @@ export const {
         session.user.plan = token.plan as any;
       }
       return session;
-    },
-    async signIn({ user, account }) {
-      if (account?.provider === "discord") {
-        const existingUser = await db.user.findUnique({
-          where: { email: user.email! },
-        });
-
-        if (existingUser) {
-          // Link Discord account
-          await db.user.update({
-            where: { id: existingUser.id },
-            data: {
-              discordId: user.id,
-              discordAvatar: user.image,
-            },
-          });
-        }
-      }
-      return true;
     },
   },
 });
