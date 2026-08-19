@@ -1,55 +1,51 @@
-import { auth } from "@/auth";
 import { NextResponse } from "next/server";
+import type { NextRequest } from "next/server";
 
-export default auth((req) => {
-  const { nextUrl } = req;
-  const isLoggedIn = !!req.auth;
-  const userRole = req.auth?.user?.role;
+export function middleware(request: NextRequest) {
+  const { pathname } = request.nextUrl;
+  const sessionToken =
+    request.cookies.get("authjs.session-token")?.value ||
+    request.cookies.get("__Secure-authjs.session-token")?.value;
+
+  const isLoggedIn = !!sessionToken;
 
   const isAuthPage =
-    nextUrl.pathname.startsWith("/login") ||
-    nextUrl.pathname.startsWith("/register") ||
-    nextUrl.pathname.startsWith("/forgot-password") ||
-    nextUrl.pathname.startsWith("/reset-password");
+    pathname.startsWith("/login") ||
+    pathname.startsWith("/register") ||
+    pathname.startsWith("/forgot-password") ||
+    pathname.startsWith("/reset-password");
 
   const isProtectedPage =
-    nextUrl.pathname.startsWith("/dashboard") ||
-    nextUrl.pathname.startsWith("/chat") ||
-    nextUrl.pathname.startsWith("/models") ||
-    nextUrl.pathname.startsWith("/settings") ||
-    nextUrl.pathname.startsWith("/billing") ||
-    nextUrl.pathname.startsWith("/support") ||
-    nextUrl.pathname.startsWith("/profile");
+    pathname.startsWith("/dashboard") ||
+    pathname.startsWith("/chat") ||
+    pathname.startsWith("/models") ||
+    pathname.startsWith("/settings") ||
+    pathname.startsWith("/billing") ||
+    pathname.startsWith("/support") ||
+    pathname.startsWith("/profile") ||
+    pathname.startsWith("/usage");
 
-  const isAdminPage = nextUrl.pathname.startsWith("/admin");
+  const isAdminPage = pathname.startsWith("/admin");
 
-  // Redirect logged-in users away from auth pages
   if (isAuthPage && isLoggedIn) {
-    return NextResponse.redirect(new URL("/dashboard", nextUrl));
+    return NextResponse.redirect(new URL("/dashboard", request.url));
   }
 
-  // Redirect unauthenticated users to login
   if (isProtectedPage && !isLoggedIn) {
-    const loginUrl = new URL("/login", nextUrl);
-    loginUrl.searchParams.set("callbackUrl", nextUrl.pathname);
+    const loginUrl = new URL("/login", request.url);
+    loginUrl.searchParams.set("callbackUrl", pathname);
     return NextResponse.redirect(loginUrl);
   }
 
-  // Protect admin routes
-  if (isAdminPage) {
-    if (!isLoggedIn) {
-      return NextResponse.redirect(new URL("/login", nextUrl));
-    }
-    if (userRole !== "ADMIN") {
-      return NextResponse.redirect(new URL("/dashboard", nextUrl));
-    }
+  if (isAdminPage && !isLoggedIn) {
+    return NextResponse.redirect(new URL("/login", request.url));
   }
 
   return NextResponse.next();
-});
+}
 
 export const config = {
   matcher: [
-    "/((?!api|_next/static|_next/image|favicon.ico|public).*)",
+    "/((?!api|_next/static|_next/image|favicon.ico|public|og-image).*)",
   ],
 };
