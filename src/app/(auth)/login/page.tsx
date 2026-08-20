@@ -3,12 +3,14 @@
 import { Suspense, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import Link from "next/link";
+import { useTranslation } from "@/components/shared/language-provider";
 
 function LoginForm() {
   const searchParams = useSearchParams();
   const callbackUrl = searchParams.get("callbackUrl") || "/dashboard";
   const authError = searchParams.get("error");
-  const [error, setError] = useState(authError ? "Invalid email or password" : "");
+  const { t } = useTranslation();
+  const [error, setError] = useState(authError ? t("auth.invalidCredentials") : "");
   const [loading, setLoading] = useState(false);
 
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
@@ -30,14 +32,14 @@ function LoginForm() {
       const data = await res.json();
 
       if (!res.ok) {
-        setError(data.error || "Invalid email or password");
+        setError(data.error || t("auth.invalidCredentials"));
         setLoading(false);
         return;
       }
 
       window.location.href = callbackUrl;
     } catch {
-      setError("Something went wrong");
+      setError(t("auth.somethingWrong"));
       setLoading(false);
     }
   }
@@ -53,7 +55,7 @@ function LoginForm() {
       <form onSubmit={handleSubmit} className="space-y-4">
         <div>
           <label htmlFor="email" className="block text-sm font-medium mb-1.5">
-            Email
+            {t("auth.email")}
           </label>
           <input
             id="email"
@@ -66,7 +68,7 @@ function LoginForm() {
         </div>
         <div>
           <label htmlFor="password" className="block text-sm font-medium mb-1.5">
-            Password
+            {t("auth.password")}
           </label>
           <input
             id="password"
@@ -80,10 +82,10 @@ function LoginForm() {
         <div className="flex items-center justify-between text-sm">
           <label className="flex items-center gap-2">
             <input type="checkbox" className="rounded border-input" />
-            <span className="text-muted-foreground">Remember me</span>
+            <span className="text-muted-foreground">{t("auth.rememberMe")}</span>
           </label>
           <Link href="/forgot-password" className="text-primary hover:underline">
-            Forgot password?
+            {t("auth.forgotPassword")}
           </Link>
         </div>
         <button
@@ -91,7 +93,7 @@ function LoginForm() {
           disabled={loading}
           className="w-full rounded-lg bg-primary py-2.5 text-sm font-medium text-primary-foreground hover:bg-primary/90 disabled:opacity-50 transition-colors"
         >
-          {loading ? "Signing in..." : "Sign in"}
+          {loading ? t("auth.signingIn") : t("auth.signIn")}
         </button>
       </form>
     </div>
@@ -99,6 +101,7 @@ function LoginForm() {
 }
 
 export default function LoginPage() {
+  const { t } = useTranslation();
   return (
     <div className="flex min-h-screen items-center justify-center px-4">
       <div className="w-full max-w-md">
@@ -109,18 +112,18 @@ export default function LoginPage() {
             </div>
             <span className="text-2xl font-bold gradient-text">KlioAI</span>
           </Link>
-          <h1 className="text-2xl font-bold">Welcome back</h1>
-          <p className="text-muted-foreground mt-1">Sign in to your account</p>
+          <h1 className="text-2xl font-bold">{t("auth.welcomeBack")}</h1>
+          <p className="text-muted-foreground mt-1">{t("auth.signInToAccount")}</p>
         </div>
 
-        <Suspense fallback={<div className="text-center p-6 text-muted-foreground">Loading...</div>}>
+        <Suspense fallback={<div className="text-center p-6 text-muted-foreground">{t("auth.loading")}</div>}>
           <LoginForm />
         </Suspense>
 
         <p className="text-center text-sm text-muted-foreground mt-6">
-          Don&apos;t have an account?{" "}
+          {t("auth.noAccount")}{" "}
           <Link href="/register" className="text-primary hover:underline">
-            Sign up
+            {t("auth.signUp")}
           </Link>
         </p>
       </div>

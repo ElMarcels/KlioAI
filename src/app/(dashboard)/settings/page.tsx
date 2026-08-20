@@ -4,9 +4,11 @@ import { useSession } from "next-auth/react";
 import { useState } from "react";
 import { motion } from "framer-motion";
 import { User, Mail, Shield, Palette, Save } from "lucide-react";
+import { useTranslation } from "@/components/shared/language-provider";
 
 export default function SettingsPage() {
   const { data: session, update } = useSession();
+  const { t } = useTranslation();
   const [name, setName] = useState(session?.user?.name || "");
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
@@ -30,13 +32,12 @@ export default function SettingsPage() {
   return (
     <div className="max-w-3xl mx-auto space-y-8">
       <div>
-        <h1 className="text-3xl font-bold">Settings</h1>
+        <h1 className="text-3xl font-bold">{t("settings.title")}</h1>
         <p className="text-muted-foreground mt-1">
-          Manage your account settings
+          {t("settings.subtitle")}
         </p>
       </div>
 
-      {/* Profile */}
       <motion.div
         initial={{ opacity: 0, y: 10 }}
         animate={{ opacity: 1, y: 0 }}
@@ -44,12 +45,12 @@ export default function SettingsPage() {
       >
         <div className="flex items-center gap-3">
           <User className="h-5 w-5 text-muted-foreground" />
-          <h2 className="text-lg font-semibold">Profile</h2>
+          <h2 className="text-lg font-semibold">{t("settings.profile")}</h2>
         </div>
 
         <div className="space-y-4">
           <div>
-            <label className="block text-sm font-medium mb-1.5">Name</label>
+            <label className="block text-sm font-medium mb-1.5">{t("settings.name")}</label>
             <input
               value={name}
               onChange={(e) => setName(e.target.value)}
@@ -57,7 +58,7 @@ export default function SettingsPage() {
             />
           </div>
           <div>
-            <label className="block text-sm font-medium mb-1.5">Email</label>
+            <label className="block text-sm font-medium mb-1.5">{t("settings.email")}</label>
             <input
               value={session?.user?.email || ""}
               disabled
@@ -73,12 +74,11 @@ export default function SettingsPage() {
             className="inline-flex items-center gap-2 rounded-lg bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90 disabled:opacity-50 transition-colors"
           >
             <Save className="h-4 w-4" />
-            {saving ? "Saving..." : saved ? "Saved!" : "Save changes"}
+            {saving ? t("settings.saving") : saved ? t("settings.saved") : t("settings.saveChanges")}
           </button>
         </div>
       </motion.div>
 
-      {/* Discord */}
       <motion.div
         initial={{ opacity: 0, y: 10 }}
         animate={{ opacity: 1, y: 0 }}
@@ -87,7 +87,7 @@ export default function SettingsPage() {
       >
         <div className="flex items-center gap-3">
           <Shield className="h-5 w-5 text-muted-foreground" />
-          <h2 className="text-lg font-semibold">Connected Accounts</h2>
+          <h2 className="text-lg font-semibold">{t("settings.connectedAccounts")}</h2>
         </div>
         <div className="mt-4">
           <div className="flex items-center justify-between p-3 rounded-lg border border-border">
@@ -102,18 +102,17 @@ export default function SettingsPage() {
               <div>
                 <p className="text-sm font-medium">Discord</p>
                 <p className="text-xs text-muted-foreground">
-                  {"Not connected"}
+                  {t("settings.notConnected")}
                 </p>
               </div>
             </div>
             <button className="rounded-lg border border-border px-3 py-1.5 text-sm hover:bg-muted transition-colors">
-              Connect
+              {t("settings.connect")}
             </button>
           </div>
         </div>
       </motion.div>
 
-      {/* Appearance */}
       <motion.div
         initial={{ opacity: 0, y: 10 }}
         animate={{ opacity: 1, y: 0 }}
@@ -122,10 +121,10 @@ export default function SettingsPage() {
       >
         <div className="flex items-center gap-3">
           <Palette className="h-5 w-5 text-muted-foreground" />
-          <h2 className="text-lg font-semibold">Appearance</h2>
+          <h2 className="text-lg font-semibold">{t("settings.appearance")}</h2>
         </div>
         <p className="text-sm text-muted-foreground mt-2">
-          Theme settings are managed by your system preference.
+          {t("settings.themeSettings")}
         </p>
       </motion.div>
     </div>

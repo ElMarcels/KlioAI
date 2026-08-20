@@ -16,6 +16,7 @@ import {
   BarChart3,
   CreditCard,
 } from "lucide-react";
+import { useTranslation } from "@/components/shared/language-provider";
 
 const iconMap: Record<string, React.ElementType> = {
   Bot,
@@ -26,11 +27,11 @@ const iconMap: Record<string, React.ElementType> = {
   Eye,
 };
 
-function getGreeting() {
+function getGreetingKey(): string {
   const hour = new Date().getHours();
-  if (hour < 12) return "Good morning";
-  if (hour < 18) return "Good afternoon";
-  return "Good evening";
+  if (hour < 12) return "dashboard.goodMorning";
+  if (hour < 18) return "dashboard.goodAfternoon";
+  return "dashboard.goodEvening";
 }
 
 const container = {
@@ -48,31 +49,30 @@ const item = {
 
 export default function DashboardPage() {
   const { data: session } = useSession();
+  const { t } = useTranslation();
 
   return (
     <div className="max-w-7xl mx-auto space-y-8">
-      {/* Greeting */}
       <motion.div
         initial={{ opacity: 0, y: -10 }}
         animate={{ opacity: 1, y: 0 }}
         className="space-y-2"
       >
         <h1 className="text-3xl font-bold">
-          {getGreeting()}, {session?.user?.name?.split(" ")[0] || "there"}
+          {t(getGreetingKey())}, {session?.user?.name?.split(" ")[0] || "there"}
         </h1>
         <p className="text-muted-foreground text-lg">
-          How can Klio help you today?
+          {t("dashboard.howCanKlioHelp")}
         </p>
         <Link
           href="/chat"
           className="inline-flex items-center gap-2 rounded-lg bg-primary px-6 py-3 text-sm font-medium text-primary-foreground hover:bg-primary/90 transition-colors mt-4"
         >
           <MessageSquare className="h-4 w-4" />
-          Start new chat
+          {t("dashboard.startNewChat")}
         </Link>
       </motion.div>
 
-      {/* Plan Info */}
       <motion.div
         variants={item}
         initial="hidden"
@@ -82,7 +82,7 @@ export default function DashboardPage() {
         <div className="flex items-center justify-between">
           <div>
             <h3 className="text-sm font-medium text-muted-foreground">
-              Your Plan
+              {t("dashboard.yourPlan")}
             </h3>
             <p className="text-2xl font-bold mt-1 capitalize">
               Klio {(session?.user?.plan || "free").toLowerCase()}
@@ -90,7 +90,7 @@ export default function DashboardPage() {
           </div>
           <div className="flex items-center gap-2">
             <div className="h-3 w-3 rounded-full bg-green-500" />
-            <span className="text-sm text-muted-foreground">Active</span>
+            <span className="text-sm text-muted-foreground">{t("dashboard.active")}</span>
           </div>
         </div>
         {session?.user?.plan === "FREE" && (
@@ -99,14 +99,13 @@ export default function DashboardPage() {
             className="inline-flex items-center gap-2 mt-4 text-sm text-primary hover:underline"
           >
             <Zap className="h-4 w-4" />
-            Upgrade to Pro
+            {t("dashboard.upgradeToPro")}
           </Link>
         )}
       </motion.div>
 
-      {/* Available Models */}
       <div>
-        <h2 className="text-xl font-semibold mb-4">Available Models</h2>
+        <h2 className="text-xl font-semibold mb-4">{t("dashboard.availableModels")}</h2>
         <motion.div
           variants={container}
           initial="hidden"
@@ -148,9 +147,8 @@ export default function DashboardPage() {
         </motion.div>
       </div>
 
-      {/* Quick Actions */}
       <div>
-        <h2 className="text-xl font-semibold mb-4">Quick Actions</h2>
+        <h2 className="text-xl font-semibold mb-4">{t("dashboard.quickActions")}</h2>
         <motion.div
           variants={container}
           initial="hidden"
@@ -158,10 +156,10 @@ export default function DashboardPage() {
           className="grid grid-cols-2 lg:grid-cols-4 gap-4"
         >
           {[
-            { label: "Ask Klio", icon: MessageSquare, href: "/chat" },
-            { label: "Browse Models", icon: Bot, href: "/models" },
-            { label: "View Usage", icon: BarChart3, href: "/usage" },
-            { label: "Billing", icon: CreditCard, href: "/billing" },
+            { label: t("dashboard.askKlio"), icon: MessageSquare, href: "/chat" },
+            { label: t("dashboard.browseModels"), icon: Bot, href: "/models" },
+            { label: t("dashboard.viewUsage"), icon: BarChart3, href: "/usage" },
+            { label: t("dashboard.billing"), icon: CreditCard, href: "/billing" },
           ].map((action) => (
             <motion.div key={action.label} variants={item}>
               <Link

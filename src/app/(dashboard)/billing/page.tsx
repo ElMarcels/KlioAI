@@ -3,7 +3,6 @@ import { db } from "@/lib/db";
 import { PRICING_PLANS } from "@/lib/constants";
 import { Check, CreditCard } from "lucide-react";
 import { CheckoutButton } from "@/components/billing/checkout-button";
-import { PortalButton } from "@/components/billing/portal-button";
 import { redirect } from "next/navigation";
 
 export default async function BillingPage() {
@@ -58,34 +57,15 @@ export default async function BillingPage() {
               >
                 {subscription?.status || "NONE"}
               </span>
-              {subscription?.stripeCurrentPeriodEnd && (
-                <span className="text-xs text-muted-foreground">
-                  Renews{" "}
-                  {new Date(
-                    subscription.stripeCurrentPeriodEnd
-                  ).toLocaleDateString()}
-                </span>
-              )}
             </div>
           </div>
           <CreditCard className="h-8 w-8 text-muted-foreground" />
         </div>
-        {subscription && (
-          <div className="mt-4">
-            <PortalButton />
-          </div>
-        )}
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
         {PRICING_PLANS.map((plan) => {
           const isCurrent = currentPlan === plan.type;
-          const priceId =
-            plan.type === "PRO"
-              ? process.env.NEXT_PUBLIC_STRIPE_PRO_PRICE_ID
-              : plan.type === "ENTERPRISE"
-              ? process.env.NEXT_PUBLIC_STRIPE_ENTERPRISE_PRICE_ID
-              : null;
 
           return (
             <div
@@ -121,12 +101,12 @@ export default async function BillingPage() {
                 <div className="w-full rounded-lg py-2.5 text-sm font-medium text-center border border-border bg-muted">
                   Current Plan
                 </div>
-              ) : priceId ? (
-                <CheckoutButton priceId={priceId} popular={plan.popular} />
-              ) : (
+              ) : plan.type === "FREE" ? (
                 <button className="w-full rounded-lg py-2.5 text-sm font-medium border border-border hover:bg-muted transition-colors">
                   {plan.cta}
                 </button>
+              ) : (
+                <CheckoutButton planType={plan.type} popular={plan.popular} />
               )}
             </div>
           );

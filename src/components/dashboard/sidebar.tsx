@@ -16,6 +16,7 @@ import {
   LogOut,
 } from "lucide-react";
 import { signOut } from "next-auth/react";
+import { useTranslation } from "@/components/shared/language-provider";
 
 const iconMap = {
   LayoutDashboard,
@@ -26,9 +27,19 @@ const iconMap = {
   Settings,
 };
 
+const labelKeys: Record<string, string> = {
+  Dashboard: "nav.dashboard",
+  Chat: "nav.chat",
+  Models: "nav.models",
+  Support: "nav.support",
+  Billing: "nav.billing",
+  Settings: "nav.settings",
+};
+
 export function DashboardSidebar() {
   const pathname = usePathname();
   const [collapsed, setCollapsed] = useState(false);
+  const { t } = useTranslation();
 
   return (
     <aside
@@ -37,7 +48,6 @@ export function DashboardSidebar() {
         collapsed ? "w-[68px]" : "w-64"
       )}
     >
-      {/* Logo */}
       <div className="flex items-center h-16 px-4 border-b border-border">
         <Link href="/dashboard" className="flex items-center gap-2">
           <div className="h-8 w-8 rounded-lg bg-gradient-primary flex items-center justify-center shrink-0">
@@ -49,7 +59,6 @@ export function DashboardSidebar() {
         </Link>
       </div>
 
-      {/* Nav items */}
       <nav className="flex-1 p-2 space-y-1">
         {NAV_ITEMS.map((item) => {
           const Icon = iconMap[item.icon as keyof typeof iconMap];
@@ -68,20 +77,19 @@ export function DashboardSidebar() {
               )}
             >
               <Icon className="h-5 w-5 shrink-0" />
-              {!collapsed && <span>{item.label}</span>}
+              {!collapsed && <span>{t(labelKeys[item.label] || `nav.${item.label.toLowerCase()}`)}</span>}
             </Link>
           );
         })}
       </nav>
 
-      {/* Bottom actions */}
       <div className="p-2 border-t border-border space-y-1">
         <button
           onClick={() => signOut({ callbackUrl: "/" })}
           className="flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium text-muted-foreground hover:bg-muted hover:text-foreground transition-colors w-full"
         >
           <LogOut className="h-5 w-5 shrink-0" />
-          {!collapsed && <span>Sign out</span>}
+          {!collapsed && <span>{t("nav.signOut")}</span>}
         </button>
         <button
           onClick={() => setCollapsed(!collapsed)}
@@ -93,7 +101,7 @@ export function DashboardSidebar() {
               collapsed && "rotate-180"
             )}
           />
-          {!collapsed && <span>Collapse</span>}
+          {!collapsed && <span>{t("nav.collapse")}</span>}
         </button>
       </div>
     </aside>

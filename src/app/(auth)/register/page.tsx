@@ -3,9 +3,11 @@
 import { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import { useTranslation } from "@/components/shared/language-provider";
 
 export default function RegisterPage() {
   const router = useRouter();
+  const { t } = useTranslation();
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
 
@@ -29,13 +31,13 @@ export default function RegisterPage() {
 
       if (!res.ok) {
         const data = await res.json();
-        setError(data.error || "Something went wrong");
+        setError(data.error || t("auth.somethingWrong"));
         return;
       }
 
       router.push("/login?registered=true");
     } catch {
-      setError("Something went wrong");
+      setError(t("auth.somethingWrong"));
     } finally {
       setLoading(false);
     }
@@ -51,9 +53,9 @@ export default function RegisterPage() {
             </div>
             <span className="text-2xl font-bold gradient-text">KlioAI</span>
           </Link>
-          <h1 className="text-2xl font-bold">Create your account</h1>
+          <h1 className="text-2xl font-bold">{t("auth.createAccount")}</h1>
           <p className="text-muted-foreground mt-1">
-            Start using KlioAI today
+            {t("auth.startUsing")}
           </p>
         </div>
 
@@ -67,7 +69,7 @@ export default function RegisterPage() {
           <form onSubmit={handleSubmit} className="space-y-4">
             <div>
               <label htmlFor="name" className="block text-sm font-medium mb-1.5">
-                Name
+                {t("auth.name")}
               </label>
               <input
                 id="name"
@@ -83,7 +85,7 @@ export default function RegisterPage() {
                 htmlFor="email"
                 className="block text-sm font-medium mb-1.5"
               >
-                Email
+                {t("auth.email")}
               </label>
               <input
                 id="email"
@@ -99,7 +101,7 @@ export default function RegisterPage() {
                 htmlFor="password"
                 className="block text-sm font-medium mb-1.5"
               >
-                Password
+                {t("auth.password")}
               </label>
               <input
                 id="password"
@@ -116,15 +118,15 @@ export default function RegisterPage() {
               disabled={loading}
               className="w-full rounded-lg bg-primary py-2.5 text-sm font-medium text-primary-foreground hover:bg-primary/90 disabled:opacity-50 transition-colors"
             >
-              {loading ? "Creating account..." : "Create account"}
+              {loading ? t("auth.creatingAccount") : t("auth.createAccountBtn")}
             </button>
           </form>
         </div>
 
         <p className="text-center text-sm text-muted-foreground mt-6">
-          Already have an account?{" "}
+          {t("auth.hasAccount")}{" "}
           <Link href="/login" className="text-primary hover:underline">
-            Sign in
+            {t("auth.signIn")}
           </Link>
         </p>
       </div>

@@ -15,6 +15,7 @@ import {
   AlertTriangle,
 } from "lucide-react";
 import Link from "next/link";
+import { useTranslation } from "@/components/shared/language-provider";
 
 const CATEGORIES = [
   "General",
@@ -62,6 +63,7 @@ interface Ticket {
 
 export default function SupportPage() {
   const { data: session } = useSession();
+  const { t } = useTranslation();
   const [tickets, setTickets] = useState<Ticket[]>([]);
   const [loading, setLoading] = useState(true);
   const [showCreate, setShowCreate] = useState(false);
@@ -101,7 +103,7 @@ export default function SupportPage() {
 
       if (!res.ok) {
         const data = await res.json();
-        setError(data.error || "Failed to create ticket");
+        setError(data.error || t("auth.somethingWrong"));
         return;
       }
 
@@ -112,7 +114,7 @@ export default function SupportPage() {
       setPriority("MEDIUM");
       fetchTickets();
     } catch {
-      setError("Something went wrong");
+      setError(t("auth.somethingWrong"));
     } finally {
       setCreating(false);
     }
@@ -122,9 +124,9 @@ export default function SupportPage() {
     <div className="max-w-5xl mx-auto space-y-8">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-bold">Support</h1>
+          <h1 className="text-3xl font-bold">{t("support.title")}</h1>
           <p className="text-muted-foreground mt-1">
-            Get help with your account or report issues
+            {t("support.subtitle")}
           </p>
         </div>
         <button
@@ -132,7 +134,7 @@ export default function SupportPage() {
           className="inline-flex items-center gap-2 rounded-lg bg-primary px-4 py-2.5 text-sm font-medium text-primary-foreground hover:bg-primary/90 transition-colors"
         >
           <Plus className="h-4 w-4" />
-          New Ticket
+          {t("support.newTicket")}
         </button>
       </div>
 
@@ -154,7 +156,7 @@ export default function SupportPage() {
               className="w-full max-w-lg rounded-xl border border-border bg-card p-6 space-y-5"
             >
               <div className="flex items-center justify-between">
-                <h2 className="text-lg font-semibold">New Support Ticket</h2>
+                <h2 className="text-lg font-semibold">{t("support.newSupportTicket")}</h2>
                 <button
                   onClick={() => setShowCreate(false)}
                   className="rounded-lg p-1 hover:bg-muted transition-colors"
@@ -166,7 +168,7 @@ export default function SupportPage() {
               <form onSubmit={handleCreate} className="space-y-4">
                 <div>
                   <label className="block text-sm font-medium mb-1.5">
-                    Subject
+                    {t("support.subject")}
                   </label>
                   <input
                     value={subject}
@@ -180,7 +182,7 @@ export default function SupportPage() {
 
                 <div>
                   <label className="block text-sm font-medium mb-1.5">
-                    Description
+                    {t("support.description")}
                   </label>
                   <textarea
                     value={description}
@@ -196,7 +198,7 @@ export default function SupportPage() {
                 <div className="grid grid-cols-2 gap-4">
                   <div>
                     <label className="block text-sm font-medium mb-1.5">
-                      Category
+                      {t("support.category")}
                     </label>
                     <select
                       value={category}
@@ -213,7 +215,7 @@ export default function SupportPage() {
 
                   <div>
                     <label className="block text-sm font-medium mb-1.5">
-                      Priority
+                      {t("support.priority")}
                     </label>
                     <select
                       value={priority}
@@ -239,14 +241,14 @@ export default function SupportPage() {
                     onClick={() => setShowCreate(false)}
                     className="rounded-lg border border-border px-4 py-2 text-sm font-medium hover:bg-muted transition-colors"
                   >
-                    Cancel
+                    {t("support.cancel")}
                   </button>
                   <button
                     type="submit"
                     disabled={creating}
                     className="inline-flex items-center gap-2 rounded-lg bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90 disabled:opacity-50 transition-colors"
                   >
-                    {creating ? "Creating..." : "Create Ticket"}
+                    {creating ? t("support.creating") : t("support.createTicket")}
                   </button>
                 </div>
               </form>
@@ -259,7 +261,7 @@ export default function SupportPage() {
         <div className="rounded-xl border border-border bg-card p-12">
           <div className="flex flex-col items-center text-center">
             <div className="h-8 w-8 animate-spin rounded-full border-2 border-primary border-t-transparent" />
-            <p className="text-muted-foreground text-sm mt-3">Loading tickets...</p>
+            <p className="text-muted-foreground text-sm mt-3">{t("support.loadingTickets")}</p>
           </div>
         </div>
       ) : tickets.length === 0 ? (
@@ -270,10 +272,9 @@ export default function SupportPage() {
         >
           <div className="flex flex-col items-center text-center">
             <HeadphonesIcon className="h-12 w-12 text-muted-foreground mb-4" />
-            <h3 className="text-lg font-semibold mb-2">No tickets yet</h3>
+            <h3 className="text-lg font-semibold mb-2">{t("support.noTickets")}</h3>
             <p className="text-muted-foreground text-sm max-w-md">
-              If you need help, create a support ticket and our team will respond
-              as soon as possible.
+              {t("support.noTicketsDescription")}
             </p>
           </div>
         </motion.div>

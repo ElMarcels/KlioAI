@@ -12,6 +12,7 @@ import {
   Eye,
   ArrowRight,
 } from "lucide-react";
+import { useTranslation } from "@/components/shared/language-provider";
 
 const iconMap: Record<string, React.ElementType> = {
   Bot,
@@ -33,12 +34,13 @@ const item = {
 };
 
 export default function ModelsPage() {
+  const { t } = useTranslation();
   return (
     <div className="max-w-5xl mx-auto space-y-8">
       <div>
-        <h1 className="text-3xl font-bold">AI Models</h1>
+        <h1 className="text-3xl font-bold">{t("models.title")}</h1>
         <p className="text-muted-foreground mt-1">
-          Explore all available KlioAI models
+          {t("models.subtitle")}
         </p>
       </div>
 
@@ -77,7 +79,7 @@ export default function ModelsPage() {
                   href={`/chat?model=${model.id}`}
                   className="inline-flex items-center gap-2 mt-4 text-sm text-primary hover:underline"
                 >
-                  Start chatting
+                  {t("models.startChatting")}
                   <ArrowRight className="h-4 w-4" />
                 </Link>
               </div>

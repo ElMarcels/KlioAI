@@ -3,10 +3,10 @@
 import { useState } from "react";
 
 export function CheckoutButton({
-  priceId,
+  planType,
   popular,
 }: {
-  priceId: string;
+  planType: string;
   popular?: boolean;
 }) {
   const [loading, setLoading] = useState(false);
@@ -17,7 +17,7 @@ export function CheckoutButton({
       const res = await fetch("/api/billing/checkout", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ priceId }),
+        body: JSON.stringify({ planId: planType }),
       });
       const data = await res.json();
       if (data.url) {

@@ -7,24 +7,72 @@ import { motion, AnimatePresence } from "framer-motion";
 
 interface ChatWindowProps {
   modelId: string;
-  conversationId?: string;
+  conversationId?: string | null;
+  onConversationCreated?: (id: string) => void;
+}
+
+interface DbMessage {
+  id: string;
+  role: string;
+  content: string;
 }
 
 export function ChatWindow({
   modelId,
   conversationId: initialConversationId,
+  onConversationCreated,
 }: ChatWindowProps) {
   const [conversationId, setConversationId] = useState<string | undefined>(
-    initialConversationId
+    initialConversationId || undefined
   );
+  const [loadedMessages, setLoadedMessages] = useState<DbMessage[]>([]);
+  const [initialMessagesLoaded, setInitialMessagesLoaded] = useState(false);
+
+  useEffect(() => {
+    if (!initialConversationId) {
+      setLoadedMessages([]);
+      setInitialMessagesLoaded(true);
+      return;
+    }
+
+    let cancelled = false;
+    async function load() {
+      try {
+        const res = await fetch(
+          `/api/conversations/${initialConversationId}/messages`
+        );
+        if (res.ok && !cancelled) {
+          const msgs: DbMessage[] = await res.json();
+          setLoadedMessages(msgs);
+        }
+      } catch {
+        // silent
+      } finally {
+        if (!cancelled) setInitialMessagesLoaded(true);
+      }
+    }
+    load();
+    return () => {
+      cancelled = true;
+    };
+  }, [initialConversationId]);
 
   const { messages, input, handleInputChange, handleSubmit, isLoading } =
     useChat({
       api: "/api/chat",
+      id: conversationId || undefined,
       body: { modelId, conversationId },
+      initialMessages: loadedMessages.map((m) => ({
+        id: m.id,
+        role: m.role as "user" | "assistant",
+        content: m.content,
+      })),
       onResponse: (response) => {
         const id = response.headers.get("X-Conversation-Id");
-        if (id) setConversationId(id);
+        if (id) {
+          setConversationId(id);
+          onConversationCreated?.(id);
+        }
       },
     });
 
@@ -34,11 +82,12 @@ export function ChatWindow({
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages]);
 
+  const showEmpty = !initialMessagesLoaded || (messages.length === 0 && !isLoading);
+
   return (
     <div className="flex flex-col h-full">
-      {/* Messages */}
       <div className="flex-1 overflow-y-auto p-4 space-y-4">
-        {messages.length === 0 && (
+        {showEmpty && (
           <div className="flex flex-col items-center justify-center h-full text-center">
             <div className="h-16 w-16 rounded-2xl bg-gradient-primary flex items-center justify-center mb-4">
               <Bot className="h-8 w-8 text-white" />
@@ -101,7 +150,6 @@ export function ChatWindow({
         <div ref={messagesEndRef} />
       </div>
 
-      {/* Input */}
       <div className="border-t border-border p-4">
         <form onSubmit={handleSubmit} className="flex gap-2">
           <input

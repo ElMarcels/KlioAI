@@ -64,15 +64,38 @@ export async function POST(req: Request) {
       },
     });
 
+    const historyMessages = conversationId
+      ? await db.message.findMany({
+          where: { conversationId: activeConversationId },
+          orderBy: { createdAt: "asc" },
+        })
+      : [];
+
+    const allMessages =
+      historyMessages.length > 0
+        ? historyMessages.map((m) => ({
+            role: m.role as "user" | "assistant",
+            content: m.content,
+          }))
+        : messages.map((m: { role: string; content: string }) => ({
+            role: m.role as "user" | "assistant",
+            content: m.content,
+          }));
+
     const modelIdForCallback = dbModel.id;
     const userIdForCallback = session.user.id;
     const modelIdStr = modelConfig.modelId;
     const convId = activeConversationId;
 
+    await db.conversation.update({
+      where: { id: convId },
+      data: { updatedAt: new Date() },
+    });
+
     const result = streamText({
       model: getModel(modelConfig),
       system: modelConfig.systemPrompt,
-      messages,
+      messages: allMessages,
       maxTokens: modelConfig.maxTokens,
       onFinish: async ({ text }) => {
         await db.message.create({
