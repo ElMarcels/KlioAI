@@ -8,9 +8,10 @@ datasource db {
 }
 
 enum UserRole {
-  USER
+  OWNER
   ADMIN
   MODERATOR
+  USER
 }
 
 enum SubscriptionStatus {

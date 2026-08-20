@@ -15,10 +15,25 @@ export async function POST(req: Request) {
   try {
     const { messages, modelId, conversationId } = await req.json();
 
+    if (!messages || !Array.isArray(messages) || messages.length === 0) {
+      return NextResponse.json(
+        { error: "Messages are required and must be a non-empty array" },
+        { status: 400 }
+      );
+    }
+
     const modelConfig = getModelConfig(modelId || "klio-core");
 
     if (!modelConfig) {
       return NextResponse.json({ error: "Model not found" }, { status: 404 });
+    }
+
+    if (!process.env.GOOGLE_AI_API_KEY) {
+      console.error("GOOGLE_AI_API_KEY is not configured");
+      return NextResponse.json(
+        { error: "AI provider is not configured. Please contact support." },
+        { status: 500 }
+      );
     }
 
     const dbModel = await db.model.upsert({
@@ -97,6 +112,12 @@ export async function POST(req: Request) {
       system: modelConfig.systemPrompt,
       messages: allMessages,
       maxTokens: modelConfig.maxTokens,
+      onError: async (error) => {
+        console.error(
+          `[Chat Error] Model: ${modelConfig.name}, Provider: ${modelConfig.provider}`,
+          error
+        );
+      },
       onFinish: async ({ text }) => {
         await db.message.create({
           data: {
@@ -126,9 +147,8 @@ export async function POST(req: Request) {
     });
   } catch (error) {
     console.error("Chat error:", error);
-    return NextResponse.json(
-      { error: "Failed to process chat" },
-      { status: 500 }
-    );
+    const message =
+      error instanceof Error ? error.message : "Failed to process chat";
+    return NextResponse.json({ error: message }, { status: 500 });
   }
 }

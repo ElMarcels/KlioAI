@@ -39,10 +39,13 @@ export const ADMIN_NAV_ITEMS = [
   { label: "Users", href: "/admin/users", icon: "Users" },
   { label: "Subscriptions", href: "/admin/subscriptions", icon: "CreditCard" },
   { label: "Payments", href: "/admin/payments", icon: "DollarSign" },
-  { label: "Models", href: "/admin/models", icon: "Bot" },
   { label: "Support", href: "/admin/support", icon: "HeadphonesIcon" },
   { label: "Analytics", href: "/admin/analytics", icon: "BarChart3" },
   { label: "Logs", href: "/admin/logs", icon: "FileText" },
+] as const;
+
+export const OWNER_NAV_ITEMS = [
+  { label: "Models", href: "/admin/models", icon: "Bot" },
   { label: "Security", href: "/admin/security", icon: "Shield" },
   { label: "Knowledge Base", href: "/admin/knowledge-base", icon: "BookOpen" },
   { label: "Announcements", href: "/admin/announcements", icon: "Megaphone" },

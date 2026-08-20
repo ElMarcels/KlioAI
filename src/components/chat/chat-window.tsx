@@ -1,8 +1,8 @@
 "use client";
 
 import { useChat } from "@ai-sdk/react";
-import { useState, useRef, useEffect } from "react";
-import { Send, Bot, User, Loader2 } from "lucide-react";
+import { useState, useRef, useEffect, useCallback } from "react";
+import { Send, Bot, User, Loader2, AlertCircle } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 
 interface ChatWindowProps {
@@ -17,64 +17,49 @@ interface DbMessage {
   content: string;
 }
 
-export function ChatWindow({
+interface ChatContentProps {
+  modelId: string;
+  conversationId: string | undefined;
+  initialMessages: { id: string; role: "user" | "assistant"; content: string }[];
+  onConversationCreated?: (id: string) => void;
+}
+
+function ChatContent({
   modelId,
-  conversationId: initialConversationId,
+  conversationId,
+  initialMessages,
   onConversationCreated,
-}: ChatWindowProps) {
-  const [conversationId, setConversationId] = useState<string | undefined>(
-    initialConversationId || undefined
-  );
-  const [loadedMessages, setLoadedMessages] = useState<DbMessage[]>([]);
-  const [initialMessagesLoaded, setInitialMessagesLoaded] = useState(false);
+}: ChatContentProps) {
+  const conversationIdRef = useRef(conversationId);
+  conversationIdRef.current = conversationId;
 
-  useEffect(() => {
-    if (!initialConversationId) {
-      setLoadedMessages([]);
-      setInitialMessagesLoaded(true);
-      return;
-    }
-
-    let cancelled = false;
-    async function load() {
-      try {
-        const res = await fetch(
-          `/api/conversations/${initialConversationId}/messages`
-        );
-        if (res.ok && !cancelled) {
-          const msgs: DbMessage[] = await res.json();
-          setLoadedMessages(msgs);
-        }
-      } catch {
-        // silent
-      } finally {
-        if (!cancelled) setInitialMessagesLoaded(true);
-      }
-    }
-    load();
-    return () => {
-      cancelled = true;
-    };
-  }, [initialConversationId]);
-
-  const { messages, input, handleInputChange, handleSubmit, isLoading } =
-    useChat({
-      api: "/api/chat",
-      id: conversationId || undefined,
-      body: { modelId, conversationId },
-      initialMessages: loadedMessages.map((m) => ({
-        id: m.id,
-        role: m.role as "user" | "assistant",
-        content: m.content,
-      })),
-      onResponse: (response) => {
-        const id = response.headers.get("X-Conversation-Id");
-        if (id) {
-          setConversationId(id);
-          onConversationCreated?.(id);
-        }
+  const {
+    messages,
+    input,
+    handleInputChange,
+    handleSubmit,
+    isLoading,
+    error,
+    reload,
+    stop,
+  } = useChat({
+    api: "/api/chat",
+    id: conversationId || undefined,
+    body: {
+      modelId,
+      get conversationId() {
+        return conversationIdRef.current;
       },
-    });
+    },
+    initialMessages,
+    onResponse: (response) => {
+      const id = response.headers.get("X-Conversation-Id");
+      if (id) {
+        conversationIdRef.current = id;
+        onConversationCreated?.(id);
+      }
+    },
+  });
 
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
@@ -82,7 +67,7 @@ export function ChatWindow({
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages]);
 
-  const showEmpty = !initialMessagesLoaded || (messages.length === 0 && !isLoading);
+  const showEmpty = messages.length === 0 && !isLoading;
 
   return (
     <div className="flex flex-col h-full">
@@ -136,7 +121,29 @@ export function ChatWindow({
           ))}
         </AnimatePresence>
 
-        {isLoading && messages.length > 0 && (
+        {error && (
+          <div className="flex gap-3">
+            <div className="h-8 w-8 rounded-full bg-destructive/10 flex items-center justify-center shrink-0">
+              <AlertCircle className="h-4 w-4 text-destructive" />
+            </div>
+            <div className="bg-destructive/10 border border-destructive/20 rounded-xl px-4 py-3 max-w-[70%]">
+              <p className="text-sm text-destructive font-medium">
+                Failed to get a response
+              </p>
+              <p className="text-xs text-destructive/80 mt-1">
+                {error.message || "An unknown error occurred. Please try again."}
+              </p>
+              <button
+                onClick={() => reload()}
+                className="text-xs text-destructive underline mt-2 hover:no-underline"
+              >
+                Retry
+              </button>
+            </div>
+          </div>
+        )}
+
+        {isLoading && messages.length > 0 && !error && (
           <div className="flex gap-3">
             <div className="h-8 w-8 rounded-full bg-gradient-primary flex items-center justify-center shrink-0">
               <Bot className="h-4 w-4 text-white" />
@@ -169,5 +176,66 @@ export function ChatWindow({
         </form>
       </div>
     </div>
+  );
+}
+
+export function ChatWindow({
+  modelId,
+  conversationId: initialConversationId,
+  onConversationCreated,
+}: ChatWindowProps) {
+  const [loadedMessages, setLoadedMessages] = useState<DbMessage[]>([]);
+  const [initialMessagesLoaded, setInitialMessagesLoaded] = useState(false);
+
+  useEffect(() => {
+    if (!initialConversationId) {
+      setLoadedMessages([]);
+      setInitialMessagesLoaded(true);
+      return;
+    }
+
+    let cancelled = false;
+    async function load() {
+      try {
+        const res = await fetch(
+          `/api/conversations/${initialConversationId}/messages`
+        );
+        if (res.ok && !cancelled) {
+          const msgs: DbMessage[] = await res.json();
+          setLoadedMessages(msgs);
+        }
+      } catch {
+        // silent
+      } finally {
+        if (!cancelled) setInitialMessagesLoaded(true);
+      }
+    }
+    load();
+    return () => {
+      cancelled = true;
+    };
+  }, [initialConversationId]);
+
+  if (!initialMessagesLoaded) {
+    return (
+      <div className="flex flex-col h-full">
+        <div className="flex-1 flex items-center justify-center">
+          <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <ChatContent
+      modelId={modelId}
+      conversationId={initialConversationId || undefined}
+      initialMessages={loadedMessages.map((m) => ({
+        id: m.id,
+        role: m.role as "user" | "assistant",
+        content: m.content,
+      }))}
+      onConversationCreated={onConversationCreated}
+    />
   );
 }

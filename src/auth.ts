@@ -61,12 +61,16 @@ export const {
     async jwt({ token, user }) {
       if (user) {
         token.id = user.id!;
+        token.role = user.role;
+        token.plan = user.plan;
       }
       return token;
     },
     async session({ session, token }) {
       if (session.user) {
         session.user.id = token.sub as string;
+        session.user.role = token.role as typeof session.user.role;
+        session.user.plan = token.plan as typeof session.user.plan;
       }
       return session;
     },

@@ -3,7 +3,8 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { cn } from "@/lib/utils";
-import { ADMIN_NAV_ITEMS } from "@/lib/constants";
+import { ADMIN_NAV_ITEMS, OWNER_NAV_ITEMS } from "@/lib/constants";
+import { useSession } from "next-auth/react";
 import {
   LayoutDashboard,
   Users,
@@ -44,6 +45,8 @@ export default function AdminShell({
   children: React.ReactNode;
 }) {
   const pathname = usePathname();
+  const { data: session } = useSession();
+  const isOwner = session?.user?.role === "OWNER";
 
   return (
     <div className="flex min-h-screen">
@@ -54,7 +57,7 @@ export default function AdminShell({
             <div className="h-8 w-8 rounded-lg bg-gradient-to-br from-red-500 to-orange-500 flex items-center justify-center">
               <Crown className="h-4 w-4 text-white" />
             </div>
-            <span className="text-lg font-bold">Admin Panel</span>
+            <span className="text-lg font-bold">{isOwner ? "Owner Panel" : "Admin Panel"}</span>
           </Link>
         </div>
 
@@ -80,6 +83,36 @@ export default function AdminShell({
               </Link>
             );
           })}
+
+          {isOwner && (
+            <>
+              <div className="my-2 border-t border-border" />
+              <div className="px-3 py-1 text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+                Owner
+              </div>
+              {OWNER_NAV_ITEMS.map((item) => {
+                const Icon = iconMap[item.icon as keyof typeof iconMap];
+                const isActive =
+                  pathname === item.href || pathname.startsWith(item.href + "/");
+
+                return (
+                  <Link
+                    key={item.href}
+                    href={item.href}
+                    className={cn(
+                      "flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors",
+                      isActive
+                        ? "bg-primary/10 text-primary"
+                        : "text-muted-foreground hover:bg-muted hover:text-foreground"
+                    )}
+                  >
+                    <Icon className="h-5 w-5 shrink-0" />
+                    <span>{item.label}</span>
+                  </Link>
+                );
+              })}
+            </>
+          )}
         </nav>
 
         <div className="p-2 border-t border-border space-y-1">
